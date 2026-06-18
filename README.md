@@ -38,8 +38,6 @@ A Retrieval-Augmented Generation (RAG) API for querying endangered wildlife spec
 
 ![Wildlife RAG UI](docs/screenshot.png)
 
-![Wildlife RAG API Docs](docs/screenshot-docs.png)
-
 **Live demo:** [animal-refuge-production.up.railway.app](https://animal-refuge-production.up.railway.app)
 
 ---
