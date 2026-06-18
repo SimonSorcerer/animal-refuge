@@ -23,6 +23,12 @@ class IngestResponse(BaseModel):
     chunks_created: int
 
 
+class IngestTextRequest(BaseModel):
+    content: str
+    filename: str
+    source: str = ""
+
+
 def _extract_text(filename: str, data: bytes) -> str:
     if filename.lower().endswith(".pdf"):
         with pdfplumber.open(io.BytesIO(data)) as pdf:
@@ -58,6 +64,53 @@ async def ingest_document(
     await db.flush()
 
     chunks_text = split_into_chunks(raw_text)
+    if not chunks_text:
+        raise HTTPException(status_code=422, detail="Document produced no chunks after splitting.")
+
+    embeddings = await embed_texts(chunks_text)
+
+    for idx, (content, embedding) in enumerate(zip(chunks_text, embeddings)):
+        db.add(
+            Chunk(
+                document_id=document.id,
+                content=content,
+                chunk_index=idx,
+                embedding=embedding,
+            )
+        )
+
+    await db.commit()
+
+    return IngestResponse(
+        document_id=document.id,
+        filename=document.filename,
+        chunks_created=len(chunks_text),
+    )
+
+
+@router.post("/text", response_model=IngestResponse)
+async def ingest_text(
+    body: IngestTextRequest,
+    db: AsyncSession = Depends(get_db),
+) -> IngestResponse:
+    data = body.content.encode("utf-8")
+    file_hash = hashlib.sha256(data).hexdigest()
+    existing = await db.execute(select(Document).where(Document.file_hash == file_hash))
+    duplicate = existing.scalar_one_or_none()
+    if duplicate:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Document already ingested as '{duplicate.filename}' (id: {duplicate.id}).",
+        )
+
+    if not body.content.strip():
+        raise HTTPException(status_code=422, detail="Content is empty.")
+
+    document = Document(filename=body.filename, source=body.source or None, file_hash=file_hash)
+    db.add(document)
+    await db.flush()
+
+    chunks_text = split_into_chunks(body.content)
     if not chunks_text:
         raise HTTPException(status_code=422, detail="Document produced no chunks after splitting.")
 

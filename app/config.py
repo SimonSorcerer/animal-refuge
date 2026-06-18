@@ -15,6 +15,7 @@ class Settings(BaseSettings):
         return v
     anthropic_api_key: str = ""
     openai_api_key: str = ""
+    iucn_api_key: str = ""
     embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 1536
     llm_model: str = "claude-sonnet-4-6"
