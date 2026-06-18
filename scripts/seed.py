@@ -6,7 +6,8 @@ from pathlib import Path
 
 import httpx
 
-API_BASE = "http://localhost:8000"
+import os
+API_BASE = os.getenv("API_BASE", "http://localhost:8000")
 DOCUMENTS_DIR = Path(__file__).parent.parent / "documents"
 
 SOURCE_MAP: dict[str, str] = {
