@@ -6,7 +6,8 @@ from sqlalchemy.orm import DeclarativeBase
 from app.config import settings
 
 _host = urlparse(settings.database_url).hostname or ""
-_connect_args = {"ssl": "require"} if _host not in ("localhost", "127.0.0.1") else {}
+_needs_ssl = _host not in ("localhost", "127.0.0.1") and not _host.endswith(".internal")
+_connect_args = {"ssl": "require"} if _needs_ssl else {}
 
 engine = create_async_engine(settings.database_url, echo=False, connect_args=_connect_args)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
