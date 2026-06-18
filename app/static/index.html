@@ -117,6 +117,16 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    .cursor::after {
+      content: "▋";
+      display: inline-block;
+      animation: blink 0.8s step-start infinite;
+      color: #2d5a27;
+      margin-left: 1px;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
     .result { margin-top: 2rem; display: none; }
 
     .answer-card {
@@ -240,6 +250,20 @@
 </main>
 
 <script>
+  function renderSources(sources) {
+    const sourcesEl = document.getElementById("sources");
+    if (sources.length === 0) { sourcesEl.innerHTML = ""; return; }
+    sourcesEl.innerHTML = `<h2>Sources</h2>` + sources.map(s => `
+      <div class="source-item">
+        <span class="source-doc" title="${s.document}">${s.document}</span>
+        <span class="source-meta">
+          <span>chunk ${s.chunk_index}</span>
+          <span class="score">${(s.relevance_score * 100).toFixed(1)}%</span>
+        </span>
+      </div>
+    `).join("");
+  }
+
   async function submitQuery() {
     const question = document.getElementById("question").value.trim();
     if (!question) return;
@@ -248,15 +272,18 @@
     const btn = document.getElementById("submit-btn");
     const spinner = document.getElementById("spinner");
     const result = document.getElementById("result");
+    const answerBody = document.getElementById("answer-body");
     const error = document.getElementById("error");
 
     btn.disabled = true;
     spinner.style.display = "block";
     result.style.display = "none";
     error.style.display = "none";
+    answerBody.innerHTML = "";
+    document.getElementById("sources").innerHTML = "";
 
     try {
-      const res = await fetch("/query", {
+      const res = await fetch("/query/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, top_k }),
@@ -267,33 +294,48 @@
         throw new Error(`${res.status}: ${text}`);
       }
 
-      const data = await res.json();
+      spinner.style.display = "none";
+      answerBody.classList.add("cursor");
 
-      document.getElementById("answer-body").innerHTML = marked.parse(data.answer);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullText = "";
 
-      const sourcesEl = document.getElementById("sources");
-      if (data.sources.length > 0) {
-        sourcesEl.innerHTML = `<h2>Sources</h2>` + data.sources.map(s => `
-          <div class="source-item">
-            <span class="source-doc" title="${s.document}">${s.document}</span>
-            <span class="source-meta">
-              <span>chunk ${s.chunk_index}</span>
-              <span class="score">${(s.relevance_score * 100).toFixed(1)}%</span>
-            </span>
-          </div>
-        `).join("");
-      } else {
-        sourcesEl.innerHTML = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop();
+
+        for (const part of parts) {
+          if (!part.startsWith("data: ")) continue;
+          const event = JSON.parse(part.slice(6));
+
+          if (event.type === "sources") {
+            renderSources(event.sources);
+            result.style.display = "block";
+          } else if (event.type === "delta") {
+            fullText += event.text;
+            result.style.display = "block";
+            answerBody.innerHTML = marked.parse(fullText);
+          } else if (event.type === "error") {
+            throw new Error(event.message);
+          }
+        }
       }
 
-      result.style.display = "block";
+      answerBody.classList.remove("cursor");
 
     } catch (err) {
+      spinner.style.display = "none";
+      answerBody.classList.remove("cursor");
       error.textContent = "Error: " + err.message;
       error.style.display = "block";
     } finally {
       btn.disabled = false;
-      spinner.style.display = "none";
     }
   }
 
