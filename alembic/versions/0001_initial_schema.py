@@ -25,6 +25,7 @@ def upgrade() -> None:
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("filename", sa.Text, nullable=False),
         sa.Column("source", sa.Text, nullable=True),
+        sa.Column("file_hash", sa.Text, nullable=True, unique=True),
         sa.Column("uploaded_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
     )
 

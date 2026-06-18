@@ -41,6 +41,8 @@ async def seed() -> None:
             if response.is_success:
                 data = response.json()
                 print(f"OK — {data['chunks_created']} chunks")
+            elif response.status_code == 409:
+                print(f"SKIPPED — already ingested")
             else:
                 print(f"FAILED ({response.status_code}): {response.text}")
 

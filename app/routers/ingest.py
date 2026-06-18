@@ -1,9 +1,11 @@
+import hashlib
 import io
 import uuid
 
 import pdfplumber
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -38,11 +40,20 @@ async def ingest_document(
     if not data:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
+    file_hash = hashlib.sha256(data).hexdigest()
+    existing = await db.execute(select(Document).where(Document.file_hash == file_hash))
+    duplicate = existing.scalar_one_or_none()
+    if duplicate:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Document already ingested as '{duplicate.filename}' (id: {duplicate.id}).",
+        )
+
     raw_text = _extract_text(file.filename or "upload", data)
     if not raw_text.strip():
         raise HTTPException(status_code=422, detail="Could not extract text from the file.")
 
-    document = Document(filename=file.filename or "upload", source=source or None)
+    document = Document(filename=file.filename or "upload", source=source or None, file_hash=file_hash)
     db.add(document)
     await db.flush()
 
