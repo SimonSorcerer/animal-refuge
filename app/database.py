@@ -1,9 +1,14 @@
+from urllib.parse import urlparse
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
 
-engine = create_async_engine(settings.database_url, echo=False)
+_host = urlparse(settings.database_url).hostname or ""
+_connect_args = {"ssl": "require"} if _host not in ("localhost", "127.0.0.1") else {}
+
+engine = create_async_engine(settings.database_url, echo=False, connect_args=_connect_args)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
