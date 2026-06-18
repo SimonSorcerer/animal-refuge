@@ -258,12 +258,12 @@
 
 <header>
   <h1>Wildlife RAG</h1>
-  <p>Ask questions about endangered species using IUCN, WWF, and CITES documents.</p>
+  <p>Ask questions about wild cat species (Felidae) using IUCN Red List assessments.</p>
 </header>
 
 <main>
   <div class="search-card">
-    <textarea id="question" placeholder="e.g. What are the main threats facing snow leopards?" rows="3"></textarea>
+    <textarea id="question" placeholder="e.g. What are the main threats facing tigers?" rows="3"></textarea>
     <div class="controls">
       <span class="top-k-label">Sources to retrieve</span>
       <input type="number" id="top_k" value="5" min="1" max="20" />
@@ -274,11 +274,11 @@
   <div class="suggestions">
     <p>Try asking</p>
     <div class="suggestion-pills">
-      <button class="pill" onclick="suggest(this)">What are the main threats facing snow leopards?</button>
-      <button class="pill" onclick="suggest(this)">What is the conservation status of the margay?</button>
-      <button class="pill" onclick="suggest(this)">Where does the ocelot live and what threatens it?</button>
-      <button class="pill" onclick="suggest(this)">What makes the southern tiger cat endangered?</button>
-      <button class="pill" onclick="suggest(this)">Which of these wild cat species has the smallest population?</button>
+      <button class="pill" onclick="suggest(this)">What are the main threats facing tigers?</button>
+      <button class="pill" onclick="suggest(this)">How has the lion population changed over the last 50 years?</button>
+      <button class="pill" onclick="suggest(this)">Which wild cat species are critically endangered?</button>
+      <button class="pill" onclick="suggest(this)">Where do snow leopards live and what threatens them?</button>
+      <button class="pill" onclick="suggest(this)">Compare the conservation status of cheetahs and leopards.</button>
     </div>
   </div>
 
