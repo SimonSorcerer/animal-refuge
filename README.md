@@ -8,19 +8,21 @@ A Retrieval-Augmented Generation (RAG) API for querying endangered wildlife spec
 
 ```
                         INGESTION
-  ┌──────────┐    ┌───────────────┐    ┌──────────────┐    ┌────────────┐
-  │ PDF / TXT│───▶│ Text extract  │───▶│  Chunker     │───▶│  Embedder  │
-  └──────────┘    └───────────────┘    │ (~500 tokens │    │  (OpenAI)  │
-                                       │  50 overlap) │    └─────┬──────┘
-                                       └──────────────┘          │
-                                                                  ▼
-                                                          ┌───────────────┐
-                                                          │  PostgreSQL   │
-                                                          │  + pgvector   │
-                                                          └───────┬───────┘
-                        QUERYING                                  │
-  ┌──────────┐    ┌───────────────┐    ┌──────────────┐          │
-  │ Question │───▶│   Embedder    │───▶│  Similarity  │◀─────────┘
+  ┌──────────┐    ┌───────────────┐
+  │ PDF / TXT│───▶│ Text extract  │──┐
+  └──────────┘    └───────────────┘  │   ┌──────────────┐    ┌────────────┐
+                                     ├──▶│  Chunker     │───▶│  Embedder  │
+  ┌──────────┐    ┌───────────────┐  │   │ (~500 tokens │    │  (OpenAI)  │
+  │ IUCN API │───▶│ fetch_iucn.py │──┘   │  50 overlap) │    └─────┬──────┘
+  └──────────┘    └───────────────┘      └──────────────┘          │
+                                                                    ▼
+                                                            ┌───────────────┐
+                                                            │  PostgreSQL   │
+                                                            │  + pgvector   │
+                                                            └───────┬───────┘
+                        QUERYING                                    │
+  ┌──────────┐    ┌───────────────┐    ┌──────────────┐            │
+  │ Question │───▶│   Embedder    │───▶│  Similarity  │◀───────────┘
   └──────────┘    │   (OpenAI)    │    │  search      │
                   └───────────────┘    └──────┬───────┘
                                               │ top-k chunks
@@ -144,7 +146,8 @@ curl -s -X POST http://localhost:8000/query \
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/ingest` | Upload a PDF or TXT document |
+| `POST` | `/ingest` | Upload a PDF or TXT document (multipart) |
+| `POST` | `/ingest/text` | Ingest plain text content (JSON) |
 | `POST` | `/query` | Ask a natural language question |
 | `GET` | `/documents` | List all ingested documents |
 | `DELETE` | `/documents/{id}` | Remove a document and all its chunks |
@@ -154,14 +157,19 @@ curl -s -X POST http://localhost:8000/query \
 
 ## Seed documents
 
-Place PDF or TXT files in `/documents` before running `scripts/seed.py`. The script auto-detects the source tag from the filename (e.g. a file containing `iucn` in its name gets tagged as `IUCN`).
+**Option 1 — local files:** place PDF or TXT files in `/documents` and run `scripts/seed.py`. The script auto-detects the source tag from the filename (e.g. a file containing `iucn` gets tagged as `IUCN`).
 
-Suggested sources:
-- [IUCN Red List](https://www.iucnredlist.org) — species assessments
-- [WWF Species Factsheets](https://www.worldwildlife.org/species)
-- [CITES Appendices](https://cites.org/eng/app/appendices.php)
+**Option 2 — IUCN Red List API:** fetch all latest global assessments for a taxonomic family in one command:
 
-Aim for 10–20 documents across a range of taxonomic groups (mammals, birds, reptiles, marine) for a meaningful demo.
+```bash
+# requires IUCN_API_KEY in .env
+python scripts/fetch_iucn.py --family Felidae
+
+# run against a deployed instance
+API_BASE=https://your-app.railway.app python scripts/fetch_iucn.py --family Felidae
+```
+
+The demo knowledge base contains all 39 species in the family Felidae (wild cats) sourced from the IUCN Red List API v4.
 
 ---
 
@@ -188,5 +196,6 @@ app/
 alembic/                  # Database migrations
 documents/                # Place seed documents here
 scripts/
-└── seed.py               # Bulk ingest from /documents
+├── seed.py               # Bulk ingest from /documents
+└── fetch_iucn.py         # Fetch IUCN Red List assessments by taxonomic family
 ```
