@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 
 from app.routers import documents, ingest, query
 
@@ -16,3 +17,8 @@ app.include_router(documents.router)
 @app.get("/health")
 async def health() -> dict:
     return {"status": "ok"}
+
+
+@app.get("/")
+async def serve_ui() -> FileResponse:
+    return FileResponse("app/static/index.html")

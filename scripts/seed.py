@@ -15,7 +15,6 @@ SOURCE_MAP: dict[str, str] = {
     "cites": "CITES",
 }
 
-
 def _guess_source(filename: str) -> str:
     lower = filename.lower()
     for key, value in SOURCE_MAP.items():

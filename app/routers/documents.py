@@ -10,7 +10,6 @@ from app.models.document import Document
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
-
 class DocumentOut(BaseModel):
     id: uuid.UUID
     filename: str

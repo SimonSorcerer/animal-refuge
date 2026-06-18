@@ -32,6 +32,14 @@ A Retrieval-Augmented Generation (RAG) API for querying endangered wildlife spec
 
 ---
 
+## Screenshot
+
+![Wildlife RAG UI](docs/screenshot.png)
+
+![Wildlife RAG API Docs](docs/screenshot-docs.png)
+
+---
+
 ## Stack
 
 | Layer | Technology |
