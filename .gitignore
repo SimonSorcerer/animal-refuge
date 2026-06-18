@@ -8,5 +8,8 @@ dist/
 *.egg-info/
 .pytest_cache/
 .env
-documents/*.txt
-!documents/*.pdf
+documents/
+!documents/IUCN.UK.2015-4.RLTS.T11509A50653476.en.2.pdf
+!documents/IUCN.UK.2015-4.RLTS.T11511A50654216.en.1.pdf
+!documents/IUCN.UK.2016-2.RLTS.T54010476A54010576.en.1.pdf
+!documents/IUCN.UK.2017-2.RLTS.T22732A50664030.en.1.pdf
